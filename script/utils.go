@@ -32,10 +32,10 @@ func FormatBytes(data []byte) string {
 	if len(data) == 0 {
 		return ""
 	} else {
-		return fmt.Sprintf("[%dx%s]", len(data), BytesToHex(data))
+		return fmt.Sprintf("[0x%s]", BytesToHex(data))
 	}
 }
 func FormatByte(data byte) string {
-	return fmt.Sprintf("[1x%02X]", data)
+	return fmt.Sprintf("[0x%02X]", data)
 
 }

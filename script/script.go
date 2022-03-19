@@ -3,9 +3,9 @@ package script
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"io"
 	"os"
+	"strings"
 )
 
 const (
@@ -41,9 +41,11 @@ type Entry struct {
 }
 
 type Strings interface {
-	ReadOffset()
-	ReadStrings(readString func([]byte) *string)
-	GetStrings() []*string
+	ReadStrings(readString func([]byte) string)
+	GetStrings() []string
+	WriteStrings(writeString func(string) []byte)
+	SetStrings(strings []string)
+	GetRaw() []byte
 }
 
 type Script struct {
@@ -59,20 +61,19 @@ type Script struct {
 //
 func OpenScript(filename string) *Script {
 	f, err := os.Open(filename)
+	if err != nil {
+		panic(err)
+	}
 	defer f.Close()
+	data, err := io.ReadAll(f)
 	if err != nil {
 		panic(err)
 	}
 	script := &Script{}
-
-	magic := make([]byte, 3)
-	f.Read(magic)
-	f.Seek(0, io.SeekStart)
-	switch string(magic) {
+	switch string(data[0:3]) {
 	case "MES":
-		script.Strings = LoadMes(f)
+		script.Strings = LoadMes(data)
 	}
-	script.Strings.ReadOffset()
 
 	return script
 }
@@ -93,17 +94,24 @@ func (s *Script) LoadCharset(filename string, isTBL bool) {
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
 			line := scanner.Text()
-			k := BytesToUint16(HexToBytes(line[0:4]))
-			s.DecodeCharset[k] = line[5:]
-			s.EncodeCharset[line[5:]] = k
+			if len(line) > 5 {
+				k := BytesToUint16(HexToBytes(line[0:4]))
+				v := line[5:]
+				if _, has := s.EncodeCharset[v]; !has {
+					s.DecodeCharset[k] = v
+					s.EncodeCharset[v] = k
+				}
+			}
 		}
 	} else {
 		data, _ := io.ReadAll(f)
 		for i, char := range string(data) {
 			k := uint16(0x8000 + i)
 			v := string(char)
-			s.DecodeCharset[k] = v
-			s.EncodeCharset[v] = k
+			if _, has := s.EncodeCharset[v]; !has {
+				s.DecodeCharset[k] = v
+				s.EncodeCharset[v] = k
+			}
 		}
 	}
 
@@ -117,90 +125,75 @@ func (s *Script) Read() {
 	s.Strings.ReadStrings(s.readString)
 }
 
-// Save
+// SaveStrings
 //  Description 保存文本，需要先执行script.Read
 //  Receiver s *Script
 //  Param filename string
 //
-func (s *Script) Save(filename string) {
+func (s *Script) SaveStrings(filename string) {
 	f, _ := os.Create(filename)
 	defer f.Close()
 
 	strings := s.Strings.GetStrings()
 	for _, str := range strings {
-		f.WriteString(*str + "\n")
+		f.WriteString(str + "\n")
 	}
 }
+func (s *Script) readString(data []byte) string {
 
-func (s *Script) readString(data []byte) *string {
-	inName := false
-	haveName := false
-	// inColor := false
-	name := ""
-	text := ""
+	text := bytes.NewBuffer(nil)
 
 	for i := 0; i < len(data); {
 		switch data[i] {
 		case LineBreak:
-			//if inColor {
-			//	text += "#>"
-			//} else {
-			//text += FormatByte(data[i])
-			//}
-			//inColor = false
-			text += FormatByte(data[i])
+			text.WriteString(FormatByte(data[i]))
 			i++
 		case NameStart:
-			haveName = true
-			inName = true
-			//text += FormatByte(data[i])
+			text.WriteString(":[")
 			i++
 		case LineStart:
-			inName = false
-			//text += FormatByte(data[i])
+			text.WriteString("]:")
 			i++
 		case Present:
-			text += FormatByte(data[i])
+			text.WriteString(FormatByte(data[i]))
 			i++
 		case SetColor:
-			//inColor = true
-			text += FormatBytes(data[i : i+4])
+			text.WriteString(FormatBytes(data[i : i+4]))
 			i += 4
 		case PresentUnknown05:
-			text += FormatByte(data[i])
+			text.WriteString(FormatByte(data[i]))
 			i++
 		case PresentResetAlignment:
-			text += FormatByte(data[i])
+			text.WriteString(FormatByte(data[i]))
 			i++
 		case RubyBaseStart:
-			text += FormatByte(data[i])
+			text.WriteString(FormatByte(data[i]))
 			i++
 		case RubyTextStart:
-			text += FormatByte(data[i])
+			text.WriteString(FormatByte(data[i]))
 			i++
 		case RubyTextEnd:
-			text += FormatByte(data[i])
+			text.WriteString(FormatByte(data[i]))
 			i++
 		case SetFontSize:
-			text += FormatBytes(data[i : i+3])
+			text.WriteString(FormatBytes(data[i : i+3]))
 			i += 3
 		case PrintInParallel:
-			text += FormatByte(data[i])
+			text.WriteString(FormatByte(data[i]))
 			i++
 		case PrintInCenter:
-			text += FormatByte(data[i])
+			text.WriteString(FormatByte(data[i]))
 			i++
 		case SetMarginTop:
-			text += FormatBytes(data[i : i+3])
+			text.WriteString(FormatBytes(data[i : i+3]))
 			i += 3
 		case SetMarginLeft:
-			text += FormatBytes(data[i : i+3])
+			text.WriteString(FormatBytes(data[i : i+3]))
 			i += 3
 		case GetHardcodedValue:
-			text += FormatBytes(data[i : i+3])
+			text.WriteString(FormatBytes(data[i : i+3]))
 			i += 3
 		case EvaluateExpression:
-			// 15 29 0A A4 B5 14 14 00 81 00 00 08 FF
 			tmp := bytes.NewBuffer(nil)
 			tmp.WriteByte(data[i])
 			i++
@@ -221,46 +214,128 @@ func (s *Script) readString(data []byte) *string {
 				}
 			}
 			tmp.WriteByte(data[i])
+			text.WriteString(FormatBytes(tmp.Bytes()))
 			i++
-			text += FormatBytes(tmp.Bytes())
-
 		case PresentUnknown18:
-			text += FormatByte(data[i])
+			text.WriteString(FormatByte(data[i]))
 			i++
 		case AutoForward:
-			text += FormatByte(data[i])
+			text.WriteString(FormatByte(data[i]))
 			i++
 		case AutoForward1A:
-			text += FormatByte(data[i])
+			text.WriteString(FormatByte(data[i]))
 			i++
 		case RubyCenterPerChar:
-			text += FormatByte(data[i])
+			text.WriteString(FormatByte(data[i]))
 			i++
 		case AltLineBreak:
-			text += FormatByte(data[i])
+			text.WriteString(FormatByte(data[i]))
 			i++
 		case Terminator:
-			inName = false
-			text += FormatByte(data[i])
+			text.WriteString(FormatByte(data[i]))
 			i++
 		default:
 			index := BytesToUint16(data[i : i+2])
 			if char, has := s.DecodeCharset[index]; has {
-				if inName {
-					name += char
-				} else {
-					text += char
-				}
+				text.WriteString(char)
 			} else {
-				text += FormatBytes(data[i : i+2])
+				text.WriteString(FormatBytes(data[i : i+2]))
 			}
 			i += 2
 		}
 
 	}
+	return text.String()
+}
 
-	if haveName {
-		text = fmt.Sprintf(":[%s]:%s", name, text)
+// LoadStrings
+//  Description 载入文本并导入
+//  Receiver s *Script
+//  Param filename string
+//
+func (s *Script) LoadStrings(filename string) {
+	f, _ := os.Open(filename)
+	defer f.Close()
+
+	strings := make([]string, 0, len(s.Strings.GetStrings()))
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Text()
+		strings = append(strings, line)
 	}
-	return &text
+	s.Strings.SetStrings(strings)
+}
+
+// Write
+//  Description 保存为脚本
+//  Receiver s *Script
+//  Param filename string
+//
+func (s *Script) Write(filename string) {
+	s.Strings.WriteStrings(s.writeString)
+
+	f, _ := os.Create(filename)
+	defer f.Close()
+	f.Write(s.Strings.GetRaw())
+}
+
+func (s *Script) stringToBytes(str string) []byte {
+	data := bytes.NewBuffer(nil)
+	for _, char := range str {
+		if index, has := s.EncodeCharset[string(char)]; has {
+			data.Write(Uint16ToBytes(index))
+		} else {
+			panic("不存在的字符：" + string(char))
+		}
+	}
+	return data.Bytes()
+}
+func (s *Script) writeString(str string) []byte {
+
+	data := bytes.NewBuffer(nil)
+
+	line := []rune(strings.TrimSpace(str))
+	i := 0
+	inBytes := false
+	tempStr := ""
+	for i < len(line) {
+		switch line[i] {
+		case ':':
+			if i == 0 {
+				i += 2
+				for line[i] != ']' {
+					tempStr += string(line[i])
+					i++
+				}
+				i += 2
+				data.WriteByte(NameStart)
+				data.Write(s.stringToBytes(tempStr))
+				data.WriteByte(LineStart)
+				tempStr = ""
+			}
+		case '[':
+			if len(tempStr) > 0 {
+				data.Write(s.stringToBytes(tempStr))
+				tempStr = ""
+			}
+			inBytes = true
+			i += 3 //跳过[0x
+		case ']':
+			if inBytes {
+				data.Write(HexToBytes(tempStr))
+				inBytes = false
+				tempStr = ""
+			} else {
+				panic("错误的 ] 结束符号，在：" + str)
+			}
+			i++
+		default:
+			tempStr += string(line[i])
+			i++
+		}
+	}
+	if len(tempStr) > 0 {
+		data.Write(s.stringToBytes(tempStr))
+	}
+	return data.Bytes()
 }

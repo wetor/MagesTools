@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/go-restruct/restruct"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -13,11 +14,11 @@ func TestLoadMes(t *testing.T) {
 	restruct.EnableExprBeta()
 	f, _ := os.Open("../data/CC/script/mes00/cc_01_01_00.msb")
 	defer f.Close()
-	mes := LoadMes(f)
-	mes.ReadOffset()
-	mes.ReadStrings(func(data []byte) *string {
+	data, _ := io.ReadAll(f)
+	mes := LoadMes(data)
+	mes.ReadStrings(func(data []byte) string {
 		fmt.Println(data)
-		return nil
+		return ""
 	})
 }
 
