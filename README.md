@@ -12,7 +12,7 @@
 - 删除`name`后的`[1x01][1x02]`，仅用`:[`和`]:`标记name
 - 删除`]:`后的半角空格
 - 删除`color`的特殊标记`<#`和`#>`，仅用字节标记，如`[4x04A01414][1x00]`
-- 增加对`EvaluateExpression`表达式的简单字节解析，可能存在bug，如`[10x15290AA4B51414008100][1x00]`
+- 增加对`EvaluateExpression`表达式的简单字节解析，如`[10x15290AA4B51414008100][1x00]`，可能存在未知bug  
 ```
 [1x0F][3x1100CC][4x04A01414][1x00]『白い光が見えた』[10x15290AA4B51414008100][1x00][1x03][1xFF]
 [1x0F][3x110026][4x04A01414][1x00]『耳鳴りのような音が聞こえた』[10x15290AA4B51414008100][1x00][1x08][1xFF]
@@ -46,4 +46,4 @@
 ## 参考依赖
 - [marcussacana](https://github.com/marcussacana) 的 [NPCSManager](https://github.com/marcussacana/NPCSManager)  
 - [liaowm5](https://github.com/SteiensGate) 的 msb_tool.py
-- [CommitteeOfZero](ttps://github.com/CommitteeOfZero) 的 [sc3ntist](https://github.com/CommitteeOfZero/sc3ntist) 以及 [SciAdv.Net](https://github.com/CommitteeOfZero/SciAdv.Net)
+- [CommitteeOfZero](https://github.com/CommitteeOfZero) 的 [sc3ntist](https://github.com/CommitteeOfZero/sc3ntist) 以及 [SciAdv.Net](https://github.com/CommitteeOfZero/SciAdv.Net)
