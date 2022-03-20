@@ -6,6 +6,78 @@
 - 《Chaos;Child》
 - 其他未测，理论都支持
 
+## Usage
+```
+  -charset string
+        [script.optional] Character set containing only text. Must be utf8 encoding. Choose between "charset" and "tbl"
+  -export
+        [optional] Export mode
+  -format string
+        [script.required] Format of script export and import. Case insensitive
+            NPCSManager format: "Npcs"
+            NPCSManager Plus format: "NpcsP" (default "Npcs")
+  -import
+        [optional] Import mode
+  -input string
+        [optional] Usually the import mode requires
+  -output string
+        [required] Output file
+  -skip
+        [script.optional] Skip duplicate code table characters. (default true)
+  -source string
+        [required] Source file
+  -tbl string
+        [script.optional] Text in TBL format. Must be utf8 encoding. Choose between "charset" and "tbl"
+  -type string
+        [required] Source file type.
+            MES(msb) Script: "script"
+                Now only MES format scripts are supported
+            Diff Binary File: "diff"
+                Diff input and output file
+        
+
+```
+
+```shell
+# 导出文本，使用tbl码表，格式为NpcsP，跳过码表中相同字符
+MagesTools -type=script -export -skip=true \
+  -format=NpcsP \
+  -tbl=./data/CC/MJPN.txt \
+  -source=./data/temp/1.msb \
+  -output=./data/temp/1.msb.txt 
+
+  
+# 导入文本，使用tbl码表，格式为NpcsP，跳过码表中相同字符
+MagesTools -type=script -import -skip=false \
+  -format=NpcsP \
+  -tbl=./data/CC/MJPN.txt \
+  -source=./data/temp/1.msb \
+  -input=./data/temp/1.msb.txt \
+  -output=./data/temp/1.msb.txt.msb
+
+# RNE使用以下参数
+# 导出文本，使用charset码表，格式为Npcs，不跳过码表中相同字符
+MagesTools -type=script -export -skip=false \
+  -format=Npcs \
+  -charset=./data/RNE/Charset_PSV_JP.utf8 \
+  -source=./data/temp/1.msb \
+  -output=./data/temp/1.msb.txt 
+
+  
+# 导入文本，使用charset码表，格式为Npcs，不跳过码表中相同字符
+MagesTools -type=script -import -skip=false \
+  -format=Npcs \
+  -charset=./data/RNE/Charset_PSV_JP.utf8 \
+  -source=./data/temp/1.msb \
+  -input=./data/temp/1.msb.txt \
+  -output=./data/temp/1.msb.txt.msb
+  
+# 对比文件
+MagesTools -type=diff \
+  -input=./data/temp/1.msb \
+  -output=./data/temp/1.msb.txt.msb
+```
+
 ## Script
 ### 格式
 目前的格式为NPCSManager的优化版
@@ -37,6 +109,14 @@
 - ~~MES和~~SC3文本导入
 
 ## 更新日志
+
+### 2022.3.20 2
+- 重构代码结构以支持更多导出格式
+- 支持NPCSManager格式的导出与导入
+  - 支持NPCSManager导出文本的导入
+  - NPCSManager无法导入此程序导出的文本，存在细微差异
+- 支持命令行调用
+- 增加帮助文档
 
 ### 2022.3.20
 - 完成MES(msb)文本导入（简单实现）

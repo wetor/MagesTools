@@ -1,9 +1,10 @@
-package script
+package utils
 
 import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -47,4 +48,22 @@ func FormatBytes(data []byte) string {
 func FormatByte(data byte) string {
 	return fmt.Sprintf("[0x%02X]", data)
 
+}
+
+func FileSameCheck(file1, file2 string) bool {
+	data1, _ := os.ReadFile(file1)
+	data2, _ := os.ReadFile(file2)
+	if len(data1) != len(data2) {
+		fmt.Printf("文件大小不一致。file1:%d  file2:%d\n", len(data1), len(data2))
+		return false
+	}
+	same := true
+	fmt.Printf("%08X: input > output\n", 0)
+	for i := 0; i < len(data1); i++ {
+		if data1[i] != data2[i] {
+			same = false
+			fmt.Printf("%08X:   %02X  >  %02X\n", i, data1[i], data2[i])
+		}
+	}
+	return same
 }
