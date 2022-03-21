@@ -13,12 +13,19 @@ import (
 
 func main() {
 
+	fmt.Print(`MagesTools 
+Version: 0.2.1_2022.03.21
+Author: WéΤοr (wetorx@qq.com)
+Github: https://github.com/wetor/MagesTools
+License: GPL-3.0
+
+`)
 	var pType, pSource, pInput, pOutput, pScriptFormat, pCharset, pTbl string
 	var pImport, pExport, pSkipChar bool
 	var pDebug int
 	flag.StringVar(&pType, "type", "", `[required] Source file type.
-    MES(msb) Script: "script"
-        Now only MES format scripts are supported
+    Mages Script: "script"
+        Supported MES(msb), SC3(scx)
     Diff Binary File: "diff"
         Diff input and output file
 `)

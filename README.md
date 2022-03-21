@@ -36,8 +36,8 @@
         [script.optional] Text in TBL format. Must be utf8 encoding. Choose between "charset" and "tbl"
   -type string
         [required] Source file type.
-            MES(msb) Script: "script"
-                Now only MES format scripts are supported
+            Mages Script: "script"
+                Supported MES(msb), SC3(scx)
             Diff Binary File: "diff"
                 Diff input and output file
 
