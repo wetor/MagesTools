@@ -3,6 +3,7 @@ package format
 import (
 	"MagesTools/script/utils"
 	"bytes"
+	"fmt"
 	"strings"
 )
 
@@ -127,6 +128,9 @@ func (f *NpcsP) DecodeLine(data []byte) string {
 			if char, has := f.decodeCharset[index]; has {
 				text.WriteString(char)
 			} else {
+				if utils.ShowWarning && data[i] >= 0x80 {
+					fmt.Printf("Warning: 字库可能缺少 [%02X %02X] 对应的字符！\n", data[i], data[i+1])
+				}
 				text.WriteString(utils.FormatBytes(data[i : i+2]))
 			}
 			i += 2

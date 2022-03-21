@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/go-restruct/restruct"
+	"path"
 	"strings"
 )
 
@@ -14,19 +15,25 @@ func main() {
 
 	var pType, pSource, pInput, pOutput, pScriptFormat, pCharset, pTbl string
 	var pImport, pExport, pSkipChar bool
+	var pDebug int
 	flag.StringVar(&pType, "type", "", `[required] Source file type.
     MES(msb) Script: "script"
         Now only MES format scripts are supported
     Diff Binary File: "diff"
         Diff input and output file
 `)
-	flag.BoolVar(&pExport, "export", false, "[optional] Export mode")
+	flag.BoolVar(&pExport, "export", false, "[optional] Export mode. Support folder export")
 	flag.BoolVar(&pImport, "import", false, "[optional] Import mode")
+	flag.IntVar(&pDebug, "debug", 0, `[optional] Debug level
+    0: Disable debug mode
+    1: Show info message
+    2: Show warning message (For example, the character table is missing characters)
+    3: Not implemented`)
 
-	flag.StringVar(&pSource, "source", "", `[required] Source file`)
+	flag.StringVar(&pSource, "source", "", `[required] Source files or folder`)
 
 	flag.StringVar(&pInput, "input", "", `[optional] Usually the import mode requires`)
-	flag.StringVar(&pOutput, "output", "", `[required] Output file`)
+	flag.StringVar(&pOutput, "output", "", `[required] Output file or folder`)
 
 	flag.StringVar(&pScriptFormat, "format", "Npcs", `[script.required] Format of script export and import. Case insensitive
     NPCSManager format: "Npcs"
@@ -34,11 +41,14 @@ func main() {
 	flag.StringVar(&pCharset, "charset", "", `[script.optional] Character set containing only text. Must be utf8 encoding. Choose between "charset" and "tbl"`)
 	flag.StringVar(&pTbl, "tbl", "", `[script.optional] Text in TBL format. Must be utf8 encoding. Choose between "charset" and "tbl"`)
 
-	flag.BoolVar(&pSkipChar, "skip", true, "[script.optional] Skip duplicate code table characters.")
+	flag.BoolVar(&pSkipChar, "skip", true, "[script.optional] Skip repeated characters in the character table.")
 
 	flag.Parse()
 	restruct.EnableExprBeta()
 
+	if pDebug >= 2 {
+		utils.ShowWarning = true
+	}
 	switch pType {
 	case "diff":
 		if len(pInput) == 0 && len(pOutput) == 0 {
@@ -53,7 +63,7 @@ func main() {
 			panic("必须指定export模式或import模式")
 		}
 		if len(pSource) == 0 {
-			panic("必须指定source源文件")
+			panic("必须指定source源文件或文件夹")
 		}
 
 		var _format format.Format
@@ -65,7 +75,7 @@ func main() {
 		default:
 			panic("未知脚本导出格式")
 		}
-		scr := script.OpenScript(pSource, _format)
+		scr := &script.Script{}
 
 		if len(pCharset) > 0 {
 			scr.LoadCharset(pCharset, false, pSkipChar)
@@ -74,14 +84,29 @@ func main() {
 		} else {
 			panic("必须指定charset文件或tbl文件")
 		}
-		scr.Read()
+
 		if pExport {
-			if len(pOutput) > 0 {
+			if utils.IsDir(pSource) && utils.IsDir(pOutput) {
+				files, _ := utils.GetDirFileList(pSource)
+				for _, file := range files {
+					if pDebug >= 1 {
+						fmt.Println(file)
+					}
+					scr.Open(file, _format)
+					scr.Read()
+					// 导出
+					scr.SaveStrings(path.Join(pOutput, path.Base(file)+".txt"))
+				}
+			} else if utils.IsFile(pSource) && utils.IsFile(pOutput) {
+				scr.Open(pSource, _format)
+				scr.Read()
 				scr.SaveStrings(pOutput)
 			} else {
-				panic("必须指定output文件")
+				panic("source和output必须同为文件，或同为文件夹")
 			}
 		} else if pImport {
+			scr.Open(pSource, _format)
+			scr.Read()
 			if len(pInput) > 0 {
 				scr.LoadStrings(pInput)
 			} else {

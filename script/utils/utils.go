@@ -5,8 +5,11 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
+
+var ShowWarning bool = false
 
 func BytesToHex(data []byte) string {
 	return strings.ToUpper(hex.EncodeToString(data))
@@ -27,6 +30,16 @@ func BytesToUint16Big(data []byte) uint16 {
 func BytesToUint16(data []byte) uint16 {
 	return binary.LittleEndian.Uint16(data)
 }
+func BytesToUint32(data []byte) uint32 {
+	return binary.LittleEndian.Uint32(data)
+}
+
+func Uint32ToBytes(data uint32) []byte {
+	bytes := make([]byte, 4)
+	binary.LittleEndian.PutUint32(bytes, data)
+	return bytes
+}
+
 func Uint16ToBytesBig(data uint16) []byte {
 	bytes := make([]byte, 2)
 	binary.BigEndian.PutUint16(bytes, data)
@@ -66,4 +79,26 @@ func FileSameCheck(file1, file2 string) bool {
 		}
 	}
 	return same
+}
+func GetDirFileList(dir string) ([]string, error) {
+	var files []string
+	var walkFunc = func(path string, info os.FileInfo, err error) error {
+		if !info.IsDir() {
+			files = append(files, path)
+		}
+		return nil
+	}
+	err := filepath.Walk(dir, walkFunc)
+	return files, err
+}
+
+func IsDir(path string) bool {
+	s, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return s.IsDir()
+}
+func IsFile(path string) bool {
+	return !IsDir(path)
 }

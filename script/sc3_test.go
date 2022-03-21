@@ -8,12 +8,12 @@ import (
 	"testing"
 )
 
-func TestLoadMes(t *testing.T) {
+func TestLoadSc3(t *testing.T) {
 	restruct.EnableExprBeta()
-	f, _ := os.Open("../data/CC/script/mes00/cc_01_01_00.msb")
+	f, _ := os.Open("../data/CCLCC/script/claa01.scx")
 	defer f.Close()
 	data, _ := io.ReadAll(f)
-	mes := LoadMes(data)
+	mes := LoadSc3(data)
 	mes.ReadStrings(func(data []byte) string {
 		fmt.Println(data)
 		return ""

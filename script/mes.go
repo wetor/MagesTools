@@ -63,6 +63,9 @@ func (m *Mes) SetStrings(strings []string) {
 }
 
 func (m *Mes) WriteStrings(writeString func(string) []byte) {
+	if m.Count == 0 {
+		return
+	}
 	data := bytes.NewBuffer(nil)
 
 	offset := 0

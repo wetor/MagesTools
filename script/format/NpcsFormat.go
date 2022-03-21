@@ -138,6 +138,9 @@ func (f *Npcs) DecodeLine(data []byte) string {
 					text.WriteString(char)
 				}
 			} else {
+				if utils.ShowWarning && data[i] > 0x80 {
+					fmt.Printf("Warning: 字库可能缺少 [%02X %02X] 对应的字符！\n", data[i], data[i+1])
+				}
 				if inName {
 					name += utils.FormatBytes(data[i : i+2])
 				} else {

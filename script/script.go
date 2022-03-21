@@ -2,35 +2,10 @@ package script
 
 import (
 	"MagesTools/script/format"
+	"MagesTools/script/utils"
 	"bufio"
 	"io"
 	"os"
-)
-
-const (
-	LineBreak             = 0x00
-	NameStart             = 0x01
-	LineStart             = 0x02
-	Present               = 0x03
-	SetColor              = 0x04
-	PresentUnknown05      = 0x05
-	PresentResetAlignment = 0x08
-	RubyBaseStart         = 0x09
-	RubyTextStart         = 0x0A
-	RubyTextEnd           = 0x0B
-	SetFontSize           = 0x0C
-	PrintInParallel       = 0x0E
-	PrintInCenter         = 0x0F
-	SetMarginTop          = 0x11
-	SetMarginLeft         = 0x12
-	GetHardcodedValue     = 0x13
-	EvaluateExpression    = 0x15
-	PresentUnknown18      = 0x18
-	AutoForward           = 0x19
-	AutoForward1A         = 0x1A
-	RubyCenterPerChar     = 0x1E
-	AltLineBreak          = 0x1F
-	Terminator            = 0xFF
 )
 
 type Entry struct {
@@ -40,10 +15,25 @@ type Entry struct {
 }
 
 type Strings interface {
+	// ReadStrings
+	//  Description 读取解析脚本全部字符串
+	//  Param readString
 	ReadStrings(readString func([]byte) string)
+	// GetStrings
+	//  Description 取出全部字符串
+	//  Return []string
 	GetStrings() []string
-	WriteStrings(writeString func(string) []byte)
+	// SetStrings
+	//  Description 替换全部字符串
+	//  Param strings
 	SetStrings(strings []string)
+	// WriteStrings
+	//  Description 写到导入字符串
+	//  Param writeString
+	WriteStrings(writeString func(string) []byte)
+	// GetRaw
+	//  Description 获取脚本数据
+	//  Return []byte
 	GetRaw() []byte
 }
 
@@ -54,12 +44,24 @@ type Script struct {
 	EncodeCharset map[string]uint16
 }
 
-// OpenScript
+// NewScript
 //  Description 打开脚本文件
 //  Param filename string
 //  Return *Script
 //
-func OpenScript(filename string, format format.Format) *Script {
+func NewScript(filename string, format format.Format) *Script {
+	script := &Script{}
+	script.Open(filename, format)
+	return script
+}
+
+// Open
+//  Description 打开脚本文件，如果已经使用LoadCharset载入码表，则不需要重新调用LoadCharset
+//  Receiver s *Script
+//  Param filename string
+//  Param format format.Format
+//
+func (s *Script) Open(filename string, format format.Format) {
 	f, err := os.Open(filename)
 	if err != nil {
 		panic(err)
@@ -69,15 +71,15 @@ func OpenScript(filename string, format format.Format) *Script {
 	if err != nil {
 		panic(err)
 	}
-	script := &Script{
-		Format: format,
-	}
+	s.Format = format
 	switch string(data[0:3]) {
 	case "MES":
-		script.Strings = LoadMes(data)
+		s.Strings = LoadMes(data)
+	case "SC3":
+		s.Strings = LoadSc3(data)
+	default:
+		panic("不支持的文件类型！ " + filename)
 	}
-
-	return script
 }
 
 // LoadCharset
@@ -101,7 +103,7 @@ func (s *Script) LoadCharset(filename string, isTBL, skipExist bool) {
 		for scanner.Scan() {
 			line := scanner.Text()
 			if len(line) > 5 {
-				k := BytesToUint16Big(HexToBytes(line[0:4]))
+				k := utils.BytesToUint16Big(utils.HexToBytes(line[0:4]))
 				v := line[5:]
 				if skipExist {
 					if _, has := encodeCharset[v]; !has {
@@ -132,16 +134,18 @@ func (s *Script) LoadCharset(filename string, isTBL, skipExist bool) {
 			}
 		}
 	}
-	s.Format.SetCharset(decodeCharset, encodeCharset)
-
+	s.DecodeCharset = decodeCharset
+	s.EncodeCharset = encodeCharset
 }
 
 // Read
-//  Description 导出文本，需要先执行script.LoadCharset载入码表
+//  Description 解析文本，需要至少执行一次script.LoadCharset载入码表
 //  Receiver s *Script
 //
 func (s *Script) Read() {
-
+	if s.DecodeCharset != nil && s.EncodeCharset != nil {
+		s.Format.SetCharset(s.DecodeCharset, s.EncodeCharset)
+	}
 	s.Strings.ReadStrings(s.Format.DecodeLine)
 }
 

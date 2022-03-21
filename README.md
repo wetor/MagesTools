@@ -3,15 +3,21 @@
 目标是完成尽可能通用的Mages工具集，目前仅以脚本为主
 
 ## 适配游戏
-- 《Chaos;Child》
-- 其他未测，理论都支持
+- 理论支持所有Mages引擎的游戏
+- 所有的MES(msb)、SC3(scx)脚本都可正常导出导入
 
 ## Usage
 ```
   -charset string
         [script.optional] Character set containing only text. Must be utf8 encoding. Choose between "charset" and "tbl"
+  -debug int
+        [optional] Debug level
+            0: Disable debug mode
+            1: Show info message
+            2: Show warning message (For example, the character table is missing characters)
+            3: Not implemented
   -export
-        [optional] Export mode
+        [optional] Export mode. Support folder export
   -format string
         [script.required] Format of script export and import. Case insensitive
             NPCSManager format: "Npcs"
@@ -21,11 +27,11 @@
   -input string
         [optional] Usually the import mode requires
   -output string
-        [required] Output file
+        [required] Output file or folder
   -skip
-        [script.optional] Skip duplicate code table characters. (default true)
+        [script.optional] Skip repeated characters in the character table. (default true)
   -source string
-        [required] Source file
+        [required] Source files or folder
   -tbl string
         [script.optional] Text in TBL format. Must be utf8 encoding. Choose between "charset" and "tbl"
   -type string
@@ -34,11 +40,20 @@
                 Now only MES format scripts are supported
             Diff Binary File: "diff"
                 Diff input and output file
-        
+
 
 ```
+### Example
 
 ```shell
+# 导出文件夹所有，使用tbl码表，格式为NpcsP，不跳过码表中相同字符，开启debug模式为2
+MagesTools -type=script -export -skip=false -debug=2\
+  -format=NpcsP \
+  -tbl=./data/CC/MJPN.txt \
+  -source=./data/CC/script/mes00 \
+  -output=./data/CC/txt
+
+
 # 导出文本，使用tbl码表，格式为NpcsP，跳过码表中相同字符
 MagesTools -type=script -export -skip=true \
   -format=NpcsP \
@@ -105,10 +120,15 @@ MagesTools -type=diff \
 ```
 
 ## 计划
-- SC3文本导出
-- ~~MES和~~SC3文本导入
+- 支持更多格式
 
 ## 更新日志
+
+### 2022.3.21
+- 支持SC3(scx)脚本的文本导入导出
+- 支持文件夹导出（暂不支持导入）
+- 增加简单的log
+- 优化代码细节
 
 ### 2022.3.20 2
 - 重构代码结构以支持更多导出格式
