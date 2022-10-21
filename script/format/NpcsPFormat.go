@@ -149,7 +149,7 @@ func (f *NpcsP) EncodeLine(str string) []byte {
 	inName := false
 	tempStr := ""
 	for i < len(line) {
-		if line[i] == ':' && i+1 < len(line) && line[i+1] == '[' {
+		if line[i] == ':' && i+1 < len(line) && line[i+1] == '[' && !(i+3 < len(line) && line[i+3] == 'x') {
 			inName = true
 			i += 2
 		} else if line[i] == ']' && i+1 < len(line) && line[i+1] == ':' {

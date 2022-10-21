@@ -168,10 +168,7 @@ func (f *Npcs) EncodeLine(str string) []byte {
 	hasName := false
 	tempStr := ""
 	for i < len(line) {
-		if line[i] == ':' && i+1 < len(line) && line[i+1] == '[' &&
-			// FIXME(kuriko): Special check for ":[0xFF]" (patch for chaos;head noah steam)
-			//   hopefully there is no one named `0xFF`.
-			!(i+6 < len(line) && strings.Contains(string(line[i+2:i+7]), "0xFF]")) {
+		if line[i] == ':' && i+1 < len(line) && line[i+1] == '[' && !(i+3 < len(line) && line[i+3] == 'x') {
 			inName = true
 			hasName = true
 			i += 2

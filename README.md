@@ -124,6 +124,9 @@ MagesTools -type=diff \
 
 ## 更新日志
 
+### 2022.10.21
+- 修复':'字符后为字节数据（`:[0xFF]`）导致Encode错误的问题 ([kurikomoe](https://github.com/kurikomoe)发现)
+
 ### 2022.3.21
 - 支持SC3(scx)脚本的文本导入导出
 - 支持文件夹导出（暂不支持导入）
