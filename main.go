@@ -14,7 +14,7 @@ import (
 func main() {
 
 	fmt.Print(`MagesTools 
-Version: 0.2.1_2022.03.21
+Version: 0.2.2_2022.10.21
 Author: WéΤοr (wetorx@qq.com)
 Github: https://github.com/wetor/MagesTools
 License: GPL-3.0
