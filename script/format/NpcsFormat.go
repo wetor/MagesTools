@@ -1,10 +1,11 @@
 package format
 
 import (
-	"MagesTools/script/utils"
 	"bytes"
 	"fmt"
 	"strings"
+
+	"MagesTools/script/utils"
 )
 
 type Npcs struct {
@@ -91,20 +92,30 @@ func (f *Npcs) DecodeLine(data []byte) string {
 			tmp := bytes.NewBuffer(nil)
 			tmp.WriteByte(data[i])
 			i++
-			for !(data[i] == 0 && data[i+1] == 0) {
-				switch data[i] & 0x60 {
-				case 0: //1 byte
-					tmp.WriteByte(data[i])
-					i++
-				case 0x20: //2 byte
-					tmp.Write(data[i : i+2])
-					i += 2
-				case 0x40: //3 byte
-					tmp.Write(data[i : i+3])
-					i += 3
-				case 0x60: // le int32 4 byte
-					tmp.Write(data[i : i+4])
-					i += 4
+			for {
+				//for !(data[i] == 0 && data[i+1] == 0) {
+				if (data[i] & 0x80) == 0x80 {
+					switch data[i] & 0x60 {
+					case 0: //1 byte
+						tmp.WriteByte(data[i])
+						i++
+					case 0x20: //2 byte
+						tmp.Write(data[i : i+2])
+						i += 2
+					case 0x40: //3 byte
+						tmp.Write(data[i : i+3])
+						i += 3
+					case 0x60: // le int32 4 byte
+						tmp.Write(data[i : i+4])
+						i += 4
+					}
+				} else {
+					if data[i] == 0 {
+						break
+					} else {
+						tmp.WriteByte(data[i])
+						i++
+					}
 				}
 			}
 			tmp.WriteByte(data[i])

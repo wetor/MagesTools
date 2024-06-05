@@ -1,20 +1,21 @@
 package main
 
 import (
+	"flag"
+	"fmt"
+	"path/filepath"
+	"strings"
+
 	"MagesTools/script"
 	"MagesTools/script/format"
 	"MagesTools/script/utils"
-	"flag"
-	"fmt"
 	"github.com/go-restruct/restruct"
-	"path"
-	"strings"
 )
 
 func main() {
 
 	fmt.Print(`MagesTools 
-Version: 0.2.2_2022.10.21
+Version: 0.2.3_2024.06.05
 Author: WéΤοr (wetorx@qq.com)
 Github: https://github.com/wetor/MagesTools
 License: GPL-3.0
@@ -102,7 +103,7 @@ License: GPL-3.0
 					scr.Open(file, _format)
 					scr.Read()
 					// 导出
-					scr.SaveStrings(path.Join(pOutput, path.Base(file)+".txt"))
+					scr.SaveStrings(filepath.Join(pOutput, filepath.Base(file)+".txt"))
 				}
 			} else if utils.IsFile(pSource) && utils.IsFile(pOutput) {
 				scr.Open(pSource, _format)

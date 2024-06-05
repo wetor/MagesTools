@@ -1,11 +1,14 @@
 package script
 
 import (
-	"MagesTools/script/format"
-	"MagesTools/script/utils"
 	"bufio"
+	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+
+	"MagesTools/script/format"
+	"MagesTools/script/utils"
 )
 
 type Entry struct {
@@ -38,6 +41,7 @@ type Strings interface {
 }
 
 type Script struct {
+	Name          string
 	Strings       Strings
 	Format        format.Format
 	DecodeCharset map[uint16]string
@@ -45,10 +49,10 @@ type Script struct {
 }
 
 // NewScript
-//  Description 打开脚本文件
-//  Param filename string
-//  Return *Script
 //
+//	Description 打开脚本文件
+//	Param filename string
+//	Return *Script
 func NewScript(filename string, format format.Format) *Script {
 	script := &Script{}
 	script.Open(filename, format)
@@ -56,17 +60,18 @@ func NewScript(filename string, format format.Format) *Script {
 }
 
 // Open
-//  Description 打开脚本文件，如果已经使用LoadCharset载入码表，则不需要重新调用LoadCharset
-//  Receiver s *Script
-//  Param filename string
-//  Param format format.Format
 //
+//	Description 打开脚本文件，如果已经使用LoadCharset载入码表，则不需要重新调用LoadCharset
+//	Receiver s *Script
+//	Param filename string
+//	Param format format.Format
 func (s *Script) Open(filename string, format format.Format) {
 	f, err := os.Open(filename)
 	if err != nil {
 		panic(err)
 	}
 	defer f.Close()
+	s.Name = filepath.Base(filename)
 	data, err := io.ReadAll(f)
 	if err != nil {
 		panic(err)
@@ -83,12 +88,12 @@ func (s *Script) Open(filename string, format format.Format) {
 }
 
 // LoadCharset
-//  Description 载入码表/字符集
-//  Receiver s *Script
-//  Param filename string 文件名
-//  Param isTBL bool 是否为码表。否则为字符集，字符集从0x8000开始
-//  Param skipExist bool 是否检查并跳过重复出现的字符，仅以第一次出现为准
 //
+//	Description 载入码表/字符集
+//	Receiver s *Script
+//	Param filename string 文件名
+//	Param isTBL bool 是否为码表。否则为字符集，字符集从0x8000开始
+//	Param skipExist bool 是否检查并跳过重复出现的字符，仅以第一次出现为准
 func (s *Script) LoadCharset(filename string, isTBL, skipExist bool) {
 
 	f, err := os.Open(filename)
@@ -139,9 +144,9 @@ func (s *Script) LoadCharset(filename string, isTBL, skipExist bool) {
 }
 
 // Read
-//  Description 解析文本，需要至少执行一次script.LoadCharset载入码表
-//  Receiver s *Script
 //
+//	Description 解析文本，需要至少执行一次script.LoadCharset载入码表
+//	Receiver s *Script
 func (s *Script) Read() {
 	if s.DecodeCharset != nil && s.EncodeCharset != nil {
 		s.Format.SetCharset(s.DecodeCharset, s.EncodeCharset)
@@ -150,25 +155,28 @@ func (s *Script) Read() {
 }
 
 // SaveStrings
-//  Description 保存文本，需要先执行script.Read
-//  Receiver s *Script
-//  Param filename string
 //
+//	Description 保存文本，需要先执行script.Read
+//	Receiver s *Script
+//	Param filename string
 func (s *Script) SaveStrings(filename string) {
+	strings := s.Strings.GetStrings()
+	if len(strings) == 0 {
+		fmt.Printf("文件 %s 无任何文本，跳过\n", s.Name)
+		return
+	}
 	f, _ := os.Create(filename)
 	defer f.Close()
-
-	strings := s.Strings.GetStrings()
 	for _, str := range strings {
 		f.WriteString(str + "\n")
 	}
 }
 
 // LoadStrings
-//  Description 载入文本并导入
-//  Receiver s *Script
-//  Param filename string
 //
+//	Description 载入文本并导入
+//	Receiver s *Script
+//	Param filename string
 func (s *Script) LoadStrings(filename string) {
 	f, _ := os.Open(filename)
 	defer f.Close()
@@ -183,10 +191,10 @@ func (s *Script) LoadStrings(filename string) {
 }
 
 // Write
-//  Description 保存为脚本
-//  Receiver s *Script
-//  Param filename string
 //
+//	Description 保存为脚本
+//	Receiver s *Script
+//	Param filename string
 func (s *Script) Write(filename string) {
 	s.Strings.WriteStrings(s.Format.EncodeLine)
 

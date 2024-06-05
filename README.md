@@ -124,6 +124,12 @@ MagesTools -type=diff \
 
 ## 更新日志
 
+### 2024.6.5
+- 修复表达式结束判断
+- 复无文本的脚本解析问题
+- 修复windows下导出文件夹无写入问题 
+- (以上问题由 [Fluchw](https://github.com/wetor/MagesTools/issues/5) 发现)
+
 ### 2022.10.21
 - 修复':'字符后为字节数据（`:[0xFF]`）导致Encode错误的问题 ([kurikomoe](https://github.com/kurikomoe)发现)
 

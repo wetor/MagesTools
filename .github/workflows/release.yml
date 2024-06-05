@@ -25,4 +25,4 @@ jobs:
       with:
         artifacts: "MagesTools_linux,MagesTools_mac,MagesTools_win.exe"
         bodyFile: ""
-        token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+        token: ${{ secrets.GITHUB_TOKEN }}

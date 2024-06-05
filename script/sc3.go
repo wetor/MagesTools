@@ -1,10 +1,11 @@
 package script
 
 import (
-	"MagesTools/script/utils"
 	"bytes"
 	"encoding/binary"
 	"fmt"
+
+	"MagesTools/script/utils"
 	"github.com/go-restruct/restruct"
 )
 
@@ -33,6 +34,9 @@ func (s *Sc3) ReadStrings(readString func([]byte) string) {
 		panic(err)
 	}
 	s.Count = (s.OffsetEnd - s.OffsetStart) / 4
+	if s.Count == 0 {
+		return
+	}
 	s.Offsets = make([]Entry, s.Count)
 	offset := s.OffsetStart
 	for i := 0; i < s.Count; i++ {
