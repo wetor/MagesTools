@@ -53,6 +53,12 @@ func (f *NpcsP) DecodeLine(data []byte) string {
 		case PresentUnknown05:
 			text.WriteString(utils.FormatByte(data[i]))
 			i++
+		case PresentUnknown06:
+			text.WriteString(utils.FormatByte(data[i]))
+			i++
+		case TextWait:
+			text.WriteString(utils.FormatBytes(data[i : i+2]))
+			i += 2
 		case PresentResetAlignment:
 			text.WriteString(utils.FormatByte(data[i]))
 			i++
@@ -81,6 +87,9 @@ func (f *NpcsP) DecodeLine(data []byte) string {
 			text.WriteString(utils.FormatBytes(data[i : i+3]))
 			i += 3
 		case GetHardcodedValue:
+			text.WriteString(utils.FormatBytes(data[i : i+3]))
+			i += 3
+		case PresentUnknown14:
 			text.WriteString(utils.FormatBytes(data[i : i+3]))
 			i += 3
 		case EvaluateExpression:
@@ -116,15 +125,21 @@ func (f *NpcsP) DecodeLine(data []byte) string {
 			tmp.WriteByte(data[i])
 			text.WriteString(utils.FormatBytes(tmp.Bytes()))
 			i++
+		case PresentUnknown16:
+			text.WriteString(utils.FormatBytes(data[i : i+3]))
+			i += 3
 		case PresentUnknown18:
 			text.WriteString(utils.FormatByte(data[i]))
 			i++
 		case AutoForward:
-			text.WriteString(utils.FormatByte(data[i]))
-			i++
+			text.WriteString(utils.FormatBytes(data[i : i+3]))
+			i += 3
 		case AutoForward1A:
-			text.WriteString(utils.FormatByte(data[i]))
-			i++
+			text.WriteString(utils.FormatBytes(data[i : i+3]))
+			i += 3
+		case PresentUnknown1B:
+			text.WriteString(utils.FormatBytes(data[i : i+2]))
+			i += 2
 		case RubyCenterPerChar:
 			text.WriteString(utils.FormatByte(data[i]))
 			i++
