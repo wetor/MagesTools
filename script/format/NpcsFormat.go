@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"unicode"
 
 	"MagesTools/script/utils"
 )
@@ -53,8 +54,14 @@ func (f *Npcs) DecodeLine(data []byte) string {
 			text.WriteString(utils.FormatByte(data[i]))
 			i++
 		case SetColor:
-			text.WriteString("<#" + utils.BytesToHex(data[i+1:i+4]))
-			i += 4
+			if data[i+1]>=0x80{
+				text.WriteString("<#" + utils.BytesToHex(data[i+1:i+4]))
+				i += 4
+			} else {
+				// in steins gate psv, color code usually [0x04 + one byte 0x??(0x00~0x7F)]
+				text.WriteString("<#" + utils.BytesToHex(data[i+1:i+2]))
+				i += 2
+			}
 		case PresentUnknown05:
 			text.WriteString(utils.FormatByte(data[i]))
 			i++
@@ -187,7 +194,17 @@ func (f *Npcs) EncodeLine(str string) []byte {
 
 	data := bytes.NewBuffer(nil)
 
-	line := []rune(strings.TrimSpace(str))
+	str = strings.TrimLeftFunc(str, func(r rune) bool {
+		// 如果是半角和全角空格，保留
+		if r == ' ' || r == '\u3000' {
+			return false
+		}
+		// 其他空白字符，裁剪
+		return unicode.IsSpace(r)
+	})
+	// 然后再对右侧进行常规的 TrimSpace
+	str = strings.TrimRightFunc(str, unicode.IsSpace)
+	line := []rune(str)
 	i := 0
 	inBytes := false
 	inName := false
@@ -198,7 +215,7 @@ func (f *Npcs) EncodeLine(str string) []byte {
 			inName = true
 			hasName = true
 			i += 2
-		} else if line[i] == ']' && i+1 < len(line) && line[i+1] == ':' {
+		} else if line[i] == ']' && !inBytes && i+1 < len(line) && line[i+1] == ':' {
 			if inName {
 				data.WriteByte(NameStart)
 				data.Write(f.stringToBytes(tempStr))
@@ -240,8 +257,13 @@ func (f *Npcs) EncodeLine(str string) []byte {
 			}
 			data.WriteByte(SetColor)
 			i += 2
-			data.Write(utils.HexToBytes(string(line[i : i+6])))
-			i += 6
+			if utils.HexToBytes(string(line[i : i+2]))[0]>=0x80 {
+				data.Write(utils.HexToBytes(string(line[i : i+6])))
+				i += 6
+			} else {
+				data.Write(utils.HexToBytes(string(line[i : i+2])))
+				i += 2
+			}
 		} else if line[i] == '#' && i+1 < len(line) && line[i+1] == '>' {
 			if len(tempStr) > 0 {
 				data.Write(f.stringToBytes(tempStr))
